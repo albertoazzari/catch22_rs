@@ -1,5 +1,5 @@
 use core::f64;
-use std::{num, vec};
+use std::vec;
 
 use rustfft::{algorithm::Radix4, num_complex::{Complex, ComplexFloat}, num_traits::real::Real, Fft};
 
@@ -152,8 +152,8 @@ pub fn corr(a: &[f64], b: &[f64]) -> f64 {
     let mut denom_a = 0.0;
     let mut denom_b = 0.0;
 
-    let mut mean_a = mean(a);
-    let mut mean_b = mean(b);
+    let mean_a = mean(a);
+    let mean_b = mean(b);
 
     for i in 0..b.len() {
         nom += (a[i] - mean_a) * (b[i] - mean_b);

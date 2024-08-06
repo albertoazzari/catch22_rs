@@ -1,5 +1,3 @@
-use core::num;
-use std::cmp::{max, min};
 
 use crate::statistics::{
     autocorr, autocorr_lag, coarsegrain, covariance_matrix, diff, f_entropy, first_zero, histbinassign, histcount_edges, histcounts, is_constant, linreg, mean, median, norm, num_bins_auto, splinefit, std_dev, welch
@@ -323,7 +321,7 @@ pub fn IN_AutoMutualInfoStats_tau_gaussian_fmmi(a: &[f64], tau: f64) -> f64 {
 }
 
 pub fn MD_hrv_classic_pnn(a: &[f64], pnn: usize) -> f64 {
-    let mut d_y = diff(a);
+    let d_y = diff(a);
 
     let mut pnn40 = 0.0;
 
