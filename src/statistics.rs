@@ -143,17 +143,17 @@ pub fn histcount_edges(a: &[f64], bin_edges: &[f64]) -> Vec<usize> {
     return histcounts;
 }
 
-pub fn autocorr_lag(a: &[f64], lag: usize) -> f64 {
-    corr(a, &a[lag..])
+pub fn autocorr_lag(a: &[f64], prefix_mean_a: &[f64], lag: usize) -> f64 {
+    let mean_a = prefix_mean_a[prefix_mean_a.len() - 1];
+    let mean_b = prefix_mean_a[prefix_mean_a.len() - 1 - lag];
+
+    corr(a, &a[lag..], mean_a, mean_b)
 }
 
-pub fn corr(a: &[f64], b: &[f64]) -> f64 {
+pub fn corr(a: &[f64], b: &[f64], mean_a: f64, mean_b: f64) -> f64 {
     let mut nom = 0.0;
     let mut denom_a = 0.0;
     let mut denom_b = 0.0;
-
-    let mean_a = mean(a);
-    let mean_b = mean(b);
 
     for i in 0..b.len() {
         nom += (a[i] - mean_a) * (b[i] - mean_b);

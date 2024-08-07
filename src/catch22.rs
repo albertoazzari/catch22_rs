@@ -1,9 +1,9 @@
-
+#![warn(dead_code)]
 use crate::statistics::{
     autocorr, autocorr_lag, coarsegrain, covariance_matrix, diff, f_entropy, first_zero, histbinassign, histcount_edges, histcounts, is_constant, linreg, mean, median, norm, num_bins_auto, splinefit, std_dev, welch
 };
 
-pub fn DN_OutlierInclude_np_001_mdrmd(a: &[f64], is_pos: bool) -> f64 {
+pub fn dn_outlier_include_np_001_mdrmd(a: &[f64], is_pos: bool) -> f64 {
     // sign is false if we want to represent -1
 
     let mut a = a.to_vec();
@@ -70,7 +70,7 @@ pub fn DN_OutlierInclude_np_001_mdrmd(a: &[f64], is_pos: bool) -> f64 {
     return median(&msdti4[..trim_lim + 1]);
 }
 
-pub fn DN_HistogramMode_n(a: &[f64], n_bins: usize) -> f64 {
+pub fn dn_histogram_mode_n(a: &[f64], n_bins: usize) -> f64 {
     let (bin_counts, bin_edges) = histcounts(a, n_bins);
 
     let mut max_count = 0;
@@ -91,7 +91,7 @@ pub fn DN_HistogramMode_n(a: &[f64], n_bins: usize) -> f64 {
     return res / num_maxs as f64;
 }
 
-pub fn CO_Embed2_Dist_tau_d_expfit_meandiff(a: &[f64]) -> f64 {
+pub fn co_embed2_dist_tau_d_expfit_meandiff(a: &[f64]) -> f64 {
     let mut tau = first_zero(a, a.len());
 
     if tau > a.len() / 10 {
@@ -135,7 +135,7 @@ pub fn CO_Embed2_Dist_tau_d_expfit_meandiff(a: &[f64]) -> f64 {
     return mean(&d_expfit_diff[..n_bins]);
 }
 
-pub fn CO_f1ecac(a: &[f64]) -> f64 {
+pub fn co_f1ecac(a: &[f64]) -> f64 {
     let autocorr = autocorr(a);
 
     let thresh = 1.0 / 1.0f64.exp();
@@ -154,7 +154,7 @@ pub fn CO_f1ecac(a: &[f64]) -> f64 {
     return out;
 }
 
-pub fn CO_FirstMin_ac(a: &[f64]) -> f64 {
+pub fn co_first_min_ac(a: &[f64]) -> f64 {
     let autocorr = autocorr(a);
 
     let mut min_ind = a.len();
@@ -169,7 +169,7 @@ pub fn CO_FirstMin_ac(a: &[f64]) -> f64 {
     return min_ind as f64;
 }
 
-pub fn CO_HistogramAMI_even_tau_bins(a: &[f64], tau: usize, n_bins: usize) -> f64 {
+pub fn co_histogram_ami_even_tau_bins(a: &[f64], tau: usize, n_bins: usize) -> f64 {
     let mut y1 = vec![0.0; a.len() - tau];
     let mut y2 = vec![0.0; a.len() - tau];
 
@@ -244,7 +244,7 @@ pub fn CO_HistogramAMI_even_tau_bins(a: &[f64], tau: usize, n_bins: usize) -> f6
     return ami;
 }
 
-pub fn CO_trev_1_num(a: &[f64]) -> f64 {
+pub fn co_trev_1_num(a: &[f64]) -> f64 {
     let tau = 1;
 
     let mut diff_temp = vec![0.0; a.len() - tau];
@@ -258,7 +258,7 @@ pub fn CO_trev_1_num(a: &[f64]) -> f64 {
     return out;
 }
 
-pub fn FC_LocalSimple_mean_tauresrat(a: &[f64], train_length: usize) -> f64 {
+pub fn fc_local_simple_mean_tauresrat(a: &[f64], train_length: usize) -> f64 {
     let mut res = vec![0.0; a.len() - train_length];
 
     for i in 0..res.len() {
@@ -278,7 +278,7 @@ pub fn FC_LocalSimple_mean_tauresrat(a: &[f64], train_length: usize) -> f64 {
     return out;
 }
 
-pub fn FC_LocalSimple_mean_stderr(a: &[f64], train_length: usize) -> f64 {
+pub fn fc_local_simple_mean_stderr(a: &[f64], train_length: usize) -> f64 {
     let mut res = vec![0.0; a.len() - train_length];
 
     for i in 0..res.len() {
@@ -295,7 +295,7 @@ pub fn FC_LocalSimple_mean_stderr(a: &[f64], train_length: usize) -> f64 {
     return out;
 }
 
-pub fn IN_AutoMutualInfoStats_tau_gaussian_fmmi(a: &[f64], tau: f64) -> f64 {
+pub fn in_auto_mutual_info_stats_tau_gaussian_fmmi(a: &[f64], tau: f64) -> f64 {
     let mut tau = tau;
 
     if tau > (a.len() as f64).ceil() {
@@ -304,8 +304,13 @@ pub fn IN_AutoMutualInfoStats_tau_gaussian_fmmi(a: &[f64], tau: f64) -> f64 {
 
     let mut ami = vec![0.0; a.len()];
 
+    let prefix_mean_a = a.iter().enumerate().rev().scan(0.0, |state, (i, x)| {
+        *state += x / (i+1) as f64;
+        Some(*state)
+    }).collect::<Vec<f64>>();
+
     for i in 0..tau as usize {
-        let ac = autocorr_lag(a, i + 1);
+        let ac = autocorr_lag(a, &prefix_mean_a, i + 1);
         ami[i] = -0.5 * (1.0 - ac * ac).ln();
     }
 
@@ -320,7 +325,7 @@ pub fn IN_AutoMutualInfoStats_tau_gaussian_fmmi(a: &[f64], tau: f64) -> f64 {
     return fmmi;
 }
 
-pub fn MD_hrv_classic_pnn(a: &[f64], pnn: usize) -> f64 {
+pub fn md_hrv_classic_pnn(a: &[f64], pnn: usize) -> f64 {
     let d_y = diff(a);
 
     let mut pnn40 = 0.0;
@@ -334,7 +339,7 @@ pub fn MD_hrv_classic_pnn(a: &[f64], pnn: usize) -> f64 {
     return pnn40 / (a.len() - 1) as f64;
 }
 
-pub fn SB_BinaryStats_diff_longstretch0(a: &[f64]) -> f64 {
+pub fn sb_binary_stats_diff_longstretch0(a: &[f64]) -> f64 {
     let mut y_bin = vec![0; a.len() - 1];
 
     for i in 0..a.len() - 1 {
@@ -364,7 +369,7 @@ pub fn SB_BinaryStats_diff_longstretch0(a: &[f64]) -> f64 {
     return max_stretch as f64;
 }
 
-pub fn SB_BinaryStats_mean_longstretch1(a: &[f64]) -> f64 {
+pub fn sb_binary_stats_mean_longstretch1(a: &[f64]) -> f64 {
     let mut y_bin = vec![0; a.len() - 1];
     let a_mean = mean(a);
     for i in 0..a.len() - 1 {
@@ -394,7 +399,7 @@ pub fn SB_BinaryStats_mean_longstretch1(a: &[f64]) -> f64 {
     return max_stretch as f64;
 }
 
-pub fn SB_MotifThree_quantile_hh(a: &[f64]) -> f64 {
+pub fn sb_motif_three_quantile_hh(a: &[f64]) -> f64 {
 
     let alphabet_size = 3;
     let yt = coarsegrain(a, alphabet_size);
@@ -438,7 +443,7 @@ pub fn SB_MotifThree_quantile_hh(a: &[f64]) -> f64 {
 
 }
 
-pub fn SC_FluctAnal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f64 {
+pub fn sc_fluct_anal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f64 {
     let lin_low = (5.0f64).ln();
     let lin_high = ((a.len()/2) as f64).ln();
 
@@ -562,7 +567,7 @@ pub fn SC_FluctAnal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f64
     return (first_min_ind+1) as f64 /ntt as f64;
 }
 
-pub fn SP_Summaries_welch_rect(a: &[f64], what: &str) -> f64{
+pub fn sp_summaries_welch_rect(a: &[f64], what: &str) -> f64{
     let window = (0..a.len()).map(|_| 1.0).collect::<Vec<f64>>();
     let Fs = 1.0;
 
@@ -617,7 +622,7 @@ pub fn SP_Summaries_welch_rect(a: &[f64], what: &str) -> f64{
     return out;
 }
 
-pub fn SB_TransitionMatrix_3ac_sumdiagcov(a: &[f64]) -> f64 {
+pub fn sb_transition_matrix_3ac_sumdiagcov(a: &[f64]) -> f64 {
     
     let num_groups = 3;
     
@@ -655,10 +660,13 @@ pub fn SB_TransitionMatrix_3ac_sumdiagcov(a: &[f64]) -> f64 {
     return diag_sum;
 }
 
-pub fn PD_PeriodicityWang_th0_01(a: &[f64]) -> f64 {
+pub fn pd_periodicity_wang_th0_01(a: &[f64]) -> f64 {
+    // let start_time_t = std::time::Instant::now();
     let th = 0.01;
 
+    // let start_time = std::time::Instant::now();
     let y_spline = splinefit(a);
+    // println!("splinefit: {:?}", start_time.elapsed().as_secs_f64());
 
     let mut y_sub = vec![0.0; a.len()];
     for i in 0..a.len() {
@@ -669,9 +677,20 @@ pub fn PD_PeriodicityWang_th0_01(a: &[f64]) -> f64 {
     
     let mut acf = vec![0.0; ac_max];
 
+    // let start_time = std::time::Instant::now();
+    let prefix_mean_y_sub = y_sub.iter().enumerate().rev().scan(0.0, |state, (i, x)| {
+        *state += x / (i+1) as f64;
+        Some(*state)
+    }).collect::<Vec<f64>>();
+    // let prefix_sum_y_sub = y_sub.iter().rev().scan(0.0, |state, x| {
+    //     *state += x;
+    //     Some(*state)
+    // }).collect::<Vec<f64>>();
+
     for i in 1..ac_max {
-        acf[i-1] = autocorr_lag(&y_sub, i);
+        acf[i-1] = autocorr_lag(&y_sub,&prefix_mean_y_sub, i);
     }
+    // println!("autocorr_lag: {:?}", start_time.elapsed().as_secs_f64());
 
     let mut troughs = vec![0.0; ac_max];
     let mut peaks = vec![0.0; ac_max];
@@ -727,6 +746,7 @@ pub fn PD_PeriodicityWang_th0_01(a: &[f64]) -> f64 {
         out = i_peak as f64;
         break;
     }
+    // println!("periodicity_wang_th0_01: {:?}", start_time_t.elapsed().as_secs_f64());
 
     return out;
 }
