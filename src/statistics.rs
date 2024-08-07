@@ -147,6 +147,7 @@ pub fn autocorr_lag(a: &[f64], prefix_mean_a: &[f64], lag: usize) -> f64 {
     let mean_a = prefix_mean_a[prefix_mean_a.len() - 1];
     let mean_b = prefix_mean_a[prefix_mean_a.len() - 1 - lag];
 
+
     corr(a, &a[lag..], mean_a, mean_b)
 }
 

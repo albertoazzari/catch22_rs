@@ -305,10 +305,9 @@ pub fn in_auto_mutual_info_stats_tau_gaussian_fmmi(a: &[f64], tau: f64) -> f64 {
     let mut ami = vec![0.0; a.len()];
 
     let prefix_mean_a = a.iter().enumerate().rev().scan(0.0, |state, (i, x)| {
-        *state += x / (i+1) as f64;
-        Some(*state)
+        *state += x;
+        Some(*state / (i+1) as f64)
     }).collect::<Vec<f64>>();
-
     for i in 0..tau as usize {
         let ac = autocorr_lag(a, &prefix_mean_a, i + 1);
         ami[i] = -0.5 * (1.0 - ac * ac).ln();
@@ -679,18 +678,13 @@ pub fn pd_periodicity_wang_th0_01(a: &[f64]) -> f64 {
 
     // let start_time = std::time::Instant::now();
     let prefix_mean_y_sub = y_sub.iter().enumerate().rev().scan(0.0, |state, (i, x)| {
-        *state += x / (i+1) as f64;
-        Some(*state)
+        *state += x;
+        Some(*state / (i+1) as f64)
     }).collect::<Vec<f64>>();
-    // let prefix_sum_y_sub = y_sub.iter().rev().scan(0.0, |state, x| {
-    //     *state += x;
-    //     Some(*state)
-    // }).collect::<Vec<f64>>();
 
     for i in 1..ac_max {
         acf[i-1] = autocorr_lag(&y_sub,&prefix_mean_y_sub, i);
     }
-    // println!("autocorr_lag: {:?}", start_time.elapsed().as_secs_f64());
 
     let mut troughs = vec![0.0; ac_max];
     let mut peaks = vec![0.0; ac_max];
