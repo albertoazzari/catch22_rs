@@ -36,6 +36,22 @@ pub fn std_dev(a: &[f64]) -> f64 {
     variance.sqrt()
 }
 
+pub fn slope(a: &[f64]) -> f64 {
+    let n = a.len();
+
+    let x_mean = a.iter().sum::<f64>() / n as f64;
+
+    let y = (1..n + 1).map(|x| x as f64).collect::<Vec<f64>>();
+    let y_mean = y.iter().sum::<f64>() / n as f64;
+
+    let xy_mean = a.iter().zip(y.iter()).map(|(x, y)| x * y).sum::<f64>() / n as f64;
+    let y2_mean = y.iter().map(|y| y.powi(2)).sum::<f64>() / n as f64;
+
+    let slope = (xy_mean - x_mean * y_mean) / (y2_mean - y_mean.powi(2));
+    assert!(slope.is_finite());
+    slope
+}
+
 pub fn histcounts(a: &[f64], n_bins: usize) -> (Vec<usize>, Vec<f64>) {
     let mut n_bins = n_bins;
 

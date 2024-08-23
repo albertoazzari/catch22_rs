@@ -4,4 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+ctrlc = "3.4.5"
+pyo3 = "0.22.2"
 rustfft = "6.2.0"
