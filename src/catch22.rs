@@ -1,6 +1,8 @@
 #![warn(dead_code)]
 use crate::statistics::{
-    autocorr, autocorr_lag, coarsegrain, covariance_matrix, diff, f_entropy, first_zero, histbinassign, histcount_edges, histcounts, is_constant, linreg, mean, median, norm, num_bins_auto, splinefit, std_dev, welch
+    autocorr, autocorr_lag, coarsegrain, covariance_matrix, diff, f_entropy, first_zero,
+    histbinassign, histcount_edges, histcounts, is_constant, linreg, mean, median, norm,
+    num_bins_auto, splinefit, std_dev, welch,
 };
 
 pub fn dn_outlier_include_np_001_mdrmd(a: &[f64], is_pos: bool) -> f64 {
@@ -44,13 +46,13 @@ pub fn dn_outlier_include_np_001_mdrmd(a: &[f64], is_pos: bool) -> f64 {
 
         let mut dt_exc = vec![0.0; high_size];
 
-        for j in 0..high_size - 1 {
+        for j in 0..high_size.saturating_sub(1) {
             dt_exc[j] = r[j + 1] - r[j];
         }
 
-        msdti1[i] = mean(&dt_exc[..high_size - 1]);
-        msdti3[i] = ((high_size - 1) as f64 * 100.0) / tot as f64;
-        msdti4[i] = median(&r[..high_size]) / (a.len() / 2) as f64 - 1.0;
+        msdti1[i] = mean(&dt_exc[..high_size.saturating_sub(1)]);
+        msdti3[i] = ((high_size.saturating_sub(1)) as f64 * 100.0) / tot as f64;
+        msdti4[i] = median(&r[..high_size]) / (a.len() as f64 / 2.0) - 1.0;
     }
 
     let trim_tr = 2.0;
@@ -84,7 +86,7 @@ pub fn dn_histogram_mode_n(a: &[f64], n_bins: usize) -> f64 {
             res = (bin_edges[i] + bin_edges[i + 1]) / 2.0;
         } else if bin_counts[i] == max_count {
             num_maxs += 1;
-            res += bin_edges[i];
+            res += (bin_edges[i] + bin_edges[i + 1]) / 2.0;
         }
     }
 
@@ -298,18 +300,23 @@ pub fn fc_local_simple_mean_stderr(a: &[f64], train_length: usize) -> f64 {
 pub fn in_auto_mutual_info_stats_tau_gaussian_fmmi(a: &[f64], tau: f64) -> f64 {
     let mut tau = tau;
 
-    if tau > (a.len() as f64).ceil() {
-        tau = (a.len() as f64).ceil();
+    if tau > (a.len() as f64 / 2.0).ceil() {
+        tau = (a.len() as f64 / 2.0).ceil();
     }
 
     let mut ami = vec![0.0; a.len()];
 
-    let prefix_mean_a = a.iter().enumerate().rev().scan(0.0, |state, (i, x)| {
-        *state += x;
-        Some(*state / (i+1) as f64)
-    }).collect::<Vec<f64>>();
+    // let prefix_mean_a = a
+    //     .iter()
+    //     .enumerate()
+    //     .rev()
+    //     .scan(0.0, |state, (i, x)| {
+    //         *state += x;
+    //         Some(*state / (i + 1) as f64)
+    //     })
+    //     .collect::<Vec<f64>>();
     for i in 0..tau as usize {
-        let ac = autocorr_lag(a, &prefix_mean_a, i + 1);
+        let ac = autocorr_lag(a, i + 1);
         ami[i] = -0.5 * (1.0 - ac * ac).ln();
     }
 
@@ -372,7 +379,6 @@ pub fn sb_binary_stats_mean_longstretch1(a: &[f64]) -> f64 {
     let mut y_bin = vec![0; a.len() - 1];
     let a_mean = mean(a);
     for i in 0..a.len() - 1 {
-        
         if a[i] - a_mean <= 0.0 {
             y_bin[i] = 0
         } else {
@@ -399,7 +405,6 @@ pub fn sb_binary_stats_mean_longstretch1(a: &[f64]) -> f64 {
 }
 
 pub fn sb_motif_three_quantile_hh(a: &[f64]) -> f64 {
-
     let alphabet_size = 3;
     let yt = coarsegrain(a, alphabet_size);
 
@@ -424,7 +429,7 @@ pub fn sb_motif_three_quantile_hh(a: &[f64]) -> f64 {
     for i in 0..alphabet_size {
         for j in 0..alphabet_size {
             for k in 0..r1[i].len() {
-                let tmp_idx = yt[r1[i][k]+1];
+                let tmp_idx = yt[r1[i][k] + 1];
                 if tmp_idx == (j + 1) {
                     r2[i][j].push(r1[i][k]);
                 }
@@ -439,15 +444,14 @@ pub fn sb_motif_three_quantile_hh(a: &[f64]) -> f64 {
         hh += f_entropy(&out2[i]);
     }
     return hh;
-
 }
 
 pub fn sc_fluct_anal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f64 {
     let lin_low = (5.0f64).ln();
-    let lin_high = ((a.len()/2) as f64).ln();
+    let lin_high = ((a.len() / 2) as f64).ln();
 
     let n_tau_steps = 50;
-    let tau_step = (lin_high - lin_low) / (n_tau_steps-1) as f64;
+    let tau_step = (lin_high - lin_low) / (n_tau_steps - 1) as f64;
 
     let mut tau = vec![0.0; n_tau_steps];
     for i in 0..n_tau_steps {
@@ -455,10 +459,10 @@ pub fn sc_fluct_anal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f6
     }
 
     let mut n_tau = n_tau_steps;
-    for i in 0..n_tau_steps-1 {
-        while tau[i] == tau[i+1] && i < n_tau-1 {
-            for j in i+1..n_tau_steps-1 {
-                tau[j] = tau[j+1];
+    for i in 0..n_tau_steps - 1 {
+        while tau[i] == tau[i + 1] && i < n_tau - 1 {
+            for j in i + 1..n_tau_steps - 1 {
+                tau[j] = tau[j + 1];
             }
             n_tau -= 1;
         }
@@ -472,13 +476,13 @@ pub fn sc_fluct_anal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f6
     let mut y_cs = vec![0.0; size_cs];
 
     y_cs[0] = a[0];
-    for i in 0..size_cs-1 {
-        y_cs[i+1] = y_cs[i] + a[(i+1)*lag];
+    for i in 0..size_cs - 1 {
+        y_cs[i + 1] = y_cs[i] + a[(i + 1) * lag];
     }
 
-    let mut x_reg = vec![0.0; tau[n_tau-1] as usize];
-    for i in 0..tau[n_tau-1] as usize {
-        x_reg[i] = (i+1) as f64;
+    let mut x_reg = vec![0.0; tau[n_tau - 1] as usize];
+    for i in 0..tau[n_tau - 1] as usize {
+        x_reg[i] = (i + 1) as f64;
     }
 
     let mut F = vec![0.0; n_tau];
@@ -490,23 +494,29 @@ pub fn sc_fluct_anal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f6
         F[i] = 0.0;
 
         for j in 0..n_buffer {
-            let (m, b) = linreg(tau[i] as usize, &x_reg, &y_cs[j*tau[i] as usize..]);
+            let (m, b) = linreg(tau[i] as usize, &x_reg, &y_cs[j * tau[i] as usize..]);
 
             for k in 0..tau[i] as usize {
-                buffer[k] = y_cs[j*tau[i] as usize + k] - (m*(k+1)as f64 + b);
+                buffer[k] = y_cs[j * tau[i] as usize + k] - (m * (k + 1) as f64 + b);
             }
 
             match how {
                 "rsrangefit" => {
-                    let max = buffer.iter().max_by(|x, y| x.partial_cmp(y).unwrap()).unwrap();
-                    let min = buffer.iter().min_by(|x, y| x.partial_cmp(y).unwrap()).unwrap();
+                    let max = buffer
+                        .iter()
+                        .max_by(|x, y| x.partial_cmp(y).unwrap())
+                        .unwrap();
+                    let min = buffer
+                        .iter()
+                        .min_by(|x, y| x.partial_cmp(y).unwrap())
+                        .unwrap();
                     F[i] += (max - min).powi(2);
-                },
+                }
                 "dfa" => {
                     for k in 0..tau[i] as usize {
                         F[i] += buffer[k].powi(2);
                     }
-                },
+                }
                 _ => return 0.0,
             }
         }
@@ -530,16 +540,14 @@ pub fn sc_fluct_anal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f6
 
     let min_points = 6;
 
-    let nsserr = ntt - 2*min_points + 1;
+    let nsserr = ntt - 2 * min_points + 1;
 
     let mut sserr = vec![0.0; nsserr];
     let mut buffer = vec![0.0; ntt - min_points + 1];
 
     for i in min_points..ntt - min_points + 1 {
-
-        
         let (m1, b1) = linreg(i, &logtt, &logff);
-        let (m2, b2) = linreg(ntt-i+1, &logtt[i-1..], &logff[i-1..]);
+        let (m2, b2) = linreg(ntt - i + 1, &logtt[i - 1..], &logff[i - 1..]);
 
         for j in 0..i {
             buffer[j] = logtt[j] * m1 + b1 - logff[j];
@@ -547,26 +555,28 @@ pub fn sc_fluct_anal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f6
 
         sserr[i - min_points] += norm(&buffer[..i]);
 
-        for j in 0..ntt-i+1 {
-            buffer[j] = logtt[j+i-1] * m2 + b2 - logff[j+i-1];
+        for j in 0..ntt - i + 1 {
+            buffer[j] = logtt[j + i - 1] * m2 + b2 - logff[j + i - 1];
         }
-        
-        sserr[i - min_points] += norm(&buffer[..ntt-i+1]);
+
+        sserr[i - min_points] += norm(&buffer[..ntt - i + 1]);
     }
 
     let mut first_min_ind = 0;
-    let minimum = *sserr.iter().min_by(|x, y| x.partial_cmp(y).unwrap()).unwrap();
+    let minimum = *sserr
+        .iter()
+        .min_by(|x, y| x.partial_cmp(y).unwrap())
+        .unwrap();
     for i in 0..nsserr {
-        if sserr[i] == minimum
-        {
+        if sserr[i] == minimum {
             first_min_ind = i + min_points - 1;
             break;
         }
     }
-    return (first_min_ind+1) as f64 /ntt as f64;
+    return (first_min_ind + 1) as f64 / ntt as f64;
 }
 
-pub fn sp_summaries_welch_rect(a: &[f64], what: &str) -> f64{
+pub fn sp_summaries_welch_rect(a: &[f64], what: &str) -> f64 {
     let window = (0..a.len()).map(|_| 1.0).collect::<Vec<f64>>();
     let Fs = 1.0;
 
@@ -577,7 +587,7 @@ pub fn sp_summaries_welch_rect(a: &[f64], what: &str) -> f64{
 
     for i in 0..S.len() {
         w[i] = 2.0 * std::f64::consts::PI * F[i];
-        Sw[i] = S[i]/(2.0*std::f64::consts::PI);
+        Sw[i] = S[i] / (2.0 * std::f64::consts::PI);
 
         if Sw[i].is_infinite() {
             return 0.0;
@@ -587,16 +597,19 @@ pub fn sp_summaries_welch_rect(a: &[f64], what: &str) -> f64{
     let dw = w[1] - w[0];
 
     // cum sum of Sw
-    let S_cs = Sw.iter().scan(0.0, |state, x| {
-        *state += x;
-        Some(*state)
-    }).collect::<Vec<f64>>();
+    let S_cs = Sw
+        .iter()
+        .scan(0.0, |state, x| {
+            *state += x;
+            Some(*state)
+        })
+        .collect::<Vec<f64>>();
 
     let mut out = 0.0;
 
     match what {
         "centroid" => {
-            let S_cs_thresh = S_cs[S.len()-1] / 2.0;
+            let S_cs_thresh = S_cs[S.len() - 1] / 2.0;
             let mut centroid = 0.0;
             for i in 0..S.len() {
                 if S_cs[i] > S_cs_thresh {
@@ -605,16 +618,16 @@ pub fn sp_summaries_welch_rect(a: &[f64], what: &str) -> f64{
                 }
             }
             out = centroid;
-        },
+        }
         "area_5_1" => {
             let mut area_5_1 = 0.0;
-            for i in 0..S.len()/5 {
+            for i in 0..S.len() / 5 {
                 if w[i] >= 5.0 && w[i] <= 1.0 {
                     area_5_1 += Sw[i];
                 }
             }
-            out = area_5_1*dw;
-        },
+            out = area_5_1 * dw;
+        }
         _ => unimplemented!("Not implemented yet"),
     }
 
@@ -622,40 +635,39 @@ pub fn sp_summaries_welch_rect(a: &[f64], what: &str) -> f64{
 }
 
 pub fn sb_transition_matrix_3ac_sumdiagcov(a: &[f64]) -> f64 {
-    
     let num_groups = 3;
-    
+
     let tau = first_zero(a, a.len());
-    
+
     let y_filt = a.to_vec();
 
     let n_down = (a.len() - 1) / tau + 1;
     let mut y_down = vec![0.0; n_down];
     for i in 0..n_down {
-        y_down[i] = y_filt[i*tau];
+        y_down[i] = y_filt[i * tau];
     }
 
-    let y_cg= coarsegrain(&y_down, num_groups); 
+    let y_cg = coarsegrain(&y_down, num_groups);
 
     let mut t = vec![vec![0.0; 3]; 3];
 
-    for i in 0..n_down-1 {
-        t[y_cg[i]-1][y_cg[i+1]-1] += 1.0;
+    for i in 0..n_down - 1 {
+        t[y_cg[i] - 1][y_cg[i + 1] - 1] += 1.0;
     }
 
     for i in 0..num_groups {
         for j in 0..num_groups {
-            t[i][j] /= (n_down-1) as f64; 
+            t[i][j] /= (n_down - 1) as f64;
         }
     }
 
     let cm = covariance_matrix(t);
     let mut diag_sum = 0.0;
-    
+
     for i in 0..num_groups {
         diag_sum += cm[i][i];
     }
-    
+
     return diag_sum;
 }
 
@@ -673,17 +685,22 @@ pub fn pd_periodicity_wang_th0_01(a: &[f64]) -> f64 {
     }
 
     let ac_max = (a.len() as f64 / 3.0).ceil() as usize;
-    
+
     let mut acf = vec![0.0; ac_max];
 
     // let start_time = std::time::Instant::now();
-    let prefix_mean_y_sub = y_sub.iter().enumerate().rev().scan(0.0, |state, (i, x)| {
-        *state += x;
-        Some(*state / (i+1) as f64)
-    }).collect::<Vec<f64>>();
+    // let prefix_mean_y_sub = y_sub
+    //     .iter()
+    //     .enumerate()
+    //     .rev()
+    //     .scan(0.0, |state, (i, x)| {
+    //         *state += x;
+    //         Some(*state / (i + 1) as f64)
+    //     })
+    //     .collect::<Vec<f64>>();
 
-    for i in 1..ac_max {
-        acf[i-1] = autocorr_lag(&y_sub,&prefix_mean_y_sub, i);
+    for i in 1..(ac_max + 1) {
+        acf[i - 1] = autocorr_lag(&y_sub,  i);
     }
 
     let mut troughs = vec![0.0; ac_max];
@@ -693,10 +710,10 @@ pub fn pd_periodicity_wang_th0_01(a: &[f64]) -> f64 {
     let mut slope_in = 0.0;
     let mut slope_out = 0.0;
 
-    for i in 1..ac_max-1 {
-        slope_in = acf[i] - acf[i-1];
-        slope_out = acf[i+1] - acf[i];
-        
+    for i in 1..ac_max - 1 {
+        slope_in = acf[i] - acf[i - 1];
+        slope_out = acf[i + 1] - acf[i];
+
         if slope_in < 0.0 && slope_out > 0.0 {
             troughs[n_troughs] = i as f64;
             n_troughs += 1;
@@ -718,7 +735,7 @@ pub fn pd_periodicity_wang_th0_01(a: &[f64]) -> f64 {
         the_peak = acf[i_peak as usize];
 
         let mut j: i32 = -1;
-        while troughs[(j as usize)+1] < i_peak as f64 && (j as usize)+1 < n_troughs {
+        while troughs[(j as usize) + 1] < i_peak as f64 && (j as usize) + 1 < n_troughs {
             j += 1;
         }
 

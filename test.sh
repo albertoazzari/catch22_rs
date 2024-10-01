@@ -1,1 +1,1 @@
-cargo test --release -- --skip catch22 --nocapture --test-threads 1
+cargo test --release -- --skip catch22 --nocapture
