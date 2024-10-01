@@ -700,7 +700,7 @@ pub fn pd_periodicity_wang_th0_01(a: &[f64]) -> f64 {
     //     .collect::<Vec<f64>>();
 
     for i in 1..(ac_max + 1) {
-        acf[i - 1] = autocorr_lag(&y_sub,  i);
+        acf[i - 1] = autocorr_lag(&y_sub, i);
     }
 
     let mut troughs = vec![0.0; ac_max];

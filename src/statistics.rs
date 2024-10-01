@@ -277,14 +277,12 @@ pub fn linreg(n: usize, x: &[f64], y: &[f64]) -> (f64, f64) {
     let mut sumx2 = 0.0;
     let mut sumxy = 0.0;
     let mut sumy = 0.0;
-    let mut sumy2 = 0.0;
 
     for i in 0..n {
         sumx += x[i];
         sumx2 += x[i] * x[i];
         sumxy += x[i] * y[i];
         sumy += y[i];
-        sumy2 += y[i] * y[i];
     }
 
     let denom = n as f64 * sumx2 - sumx * sumx;
@@ -307,18 +305,18 @@ pub fn norm(a: &[f64]) -> f64 {
     return sum.sqrt();
 }
 
-pub fn welch(a: &[f64], Fs: f64, window: &[f64]) -> (Vec<f64>, Vec<f64>) {
-    let dt = 1.0 / Fs;
+pub fn welch(a: &[f64], fs: f64, window: &[f64]) -> (Vec<f64>, Vec<f64>) {
+    let dt = 1.0 / fs;
     let df = 1.0 / (window.len().next_power_of_two() as f64) / dt;
     let m = mean(a);
     let nfft = a.len().next_power_of_two();
 
     let k = ((a.len() as f64 / window.len() as f64).floor() - 1.0) as usize;
 
-    let KMU = k as f64 * (norm(window).powi(2));
+    let kmu = k as f64 * (norm(window).powi(2));
 
-    let mut P = vec![Complex::new(0.0, 0.0); nfft];
-    let mut F = vec![Complex::new(0.0, 0.0); nfft];
+    let mut p = vec![Complex::new(0.0, 0.0); nfft];
+    let mut f = vec![Complex::new(0.0, 0.0); nfft];
 
     let mut xw = vec![0.0; window.len()];
 
@@ -328,29 +326,29 @@ pub fn welch(a: &[f64], Fs: f64, window: &[f64]) -> (Vec<f64>, Vec<f64>) {
         }
 
         for j in 0..window.len() {
-            F[i].re = xw[j] - m;
+            f[i].re = xw[j] - m;
         }
 
         let fft = Radix4::new(nfft, rustfft::FftDirection::Forward);
-        fft.process(&mut F);
+        fft.process(&mut f);
 
         for j in 0..nfft {
-            P[j] += F[j].abs().powi(2);
+            p[j] += f[j].abs().powi(2);
         }
     }
 
     let n_out = nfft / 2 + 1;
-    let mut Pxx = vec![0.0; n_out];
+    let mut pxx = vec![0.0; n_out];
     for i in 0..n_out {
-        Pxx[i] = P[i].re / KMU * dt;
+        pxx[i] = p[i].re / kmu * dt;
         if i > 0 && i < n_out - 1 {
-            Pxx[i] *= 2.0;
+            pxx[i] *= 2.0;
         }
     }
 
     let f = (0..n_out).map(|x| x as f64 * df).collect::<Vec<f64>>();
 
-    return (f, Pxx);
+    return (f, pxx);
 }
 
 pub fn cov(a: &[f64], b: &[f64]) -> f64 {
@@ -451,32 +449,32 @@ pub fn splinefit(a: &[f64]) -> Vec<f64> {
         ii[3][i] = (i + 3).min(pieces_ext - 1) as f64;
     }
 
-    let mut H = vec![0.0; (deg + 1) * pieces_ext];
+    let mut h = vec![0.0; (deg + 1) * pieces_ext];
     let mut ii_flat = 0;
     for i in 0..n_spline * pieces_ext {
         ii_flat = ii[i % n_spline][i / n_spline] as usize;
-        H[i] = h_ext[ii_flat];
+        h[i] = h_ext[ii_flat];
     }
 
-    let mut Q = vec![vec![0.0; pieces_ext]; n_spline];
+    let mut q = vec![vec![0.0; pieces_ext]; n_spline];
 
     for i in 1..n_spline {
         for j in 0..i {
             for k in 0..n_spline * pieces_ext {
-                coefs[k][j] *= H[k] / (i - j) as f64;
+                coefs[k][j] *= h[k] / (i - j) as f64;
             }
         }
 
         for j in 0..n_spline * pieces_ext {
-            Q[j % n_spline][j / n_spline] = 0.0;
+            q[j % n_spline][j / n_spline] = 0.0;
             for k in 0..n_spline {
-                Q[j % n_spline][j / n_spline] += coefs[j][k];
+                q[j % n_spline][j / n_spline] += coefs[j][k];
             }
         }
 
         for j in 0..pieces_ext {
             for k in 1..n_spline {
-                Q[k][j] += Q[k - 1][j];
+                q[k][j] += q[k - 1][j];
             }
         }
 
@@ -484,14 +482,14 @@ pub fn splinefit(a: &[f64]) -> Vec<f64> {
             if j % n_spline == 0 {
                 coefs[j][i] = 0.0;
             } else {
-                coefs[j][i] = Q[j % n_spline - 1][j / n_spline];
+                coefs[j][i] = q[j % n_spline - 1][j / n_spline];
             }
         }
 
         let mut fmax = vec![0.0; pieces_ext * n_spline];
         for j in 0..pieces_ext {
             for k in 0..n_spline {
-                fmax[j * n_spline + k] = Q[n_spline - 1][j];
+                fmax[j * n_spline + k] = q[n_spline - 1][j];
             }
         }
 
@@ -515,7 +513,7 @@ pub fn splinefit(a: &[f64]) -> Vec<f64> {
     let mut scale = vec![1.0; n_spline * pieces_ext];
     for i in 0..n_spline - 1 {
         for j in 0..n_spline * pieces_ext {
-            scale[j] /= H[j];
+            scale[j] /= h[j];
         }
         for j in 0..n_spline * pieces_ext {
             coefs[j][(n_spline - 1) - (i + 1)] *= scale[j];
