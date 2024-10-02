@@ -2,6 +2,8 @@ mod catch22;
 mod statistics;
 mod utils;
 
+pub const N_CATCH22 : usize = 24;
+
 pub fn compute(x: &[f64], n: usize) -> f64 {
     match n {
         0 => catch22::dn_outlier_include_np_001_mdrmd(x, false),
