@@ -124,9 +124,6 @@ pub fn first_zero(a: &[f64], max_tau: usize) -> usize {
     while zero_cross_ind < max_tau && autocorr[zero_cross_ind] > 0.0 {
         zero_cross_ind += 1;
     }
-    if zero_cross_ind == 0 {
-        panic!("{:?}\n{:?}", a, autocorr);
-    }
 
     return zero_cross_ind;
 }
