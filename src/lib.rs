@@ -4,12 +4,9 @@ mod catch22;
 mod statistics;
 mod utils;
 
-pub const N_CATCH22: usize = 24;
+pub const N_CATCH22: usize = 25;
 
 pub fn compute(x: &[f64], n: usize) -> f64 {
-    if is_constant(x) {
-        return 0.0;
-    }
     match n {
         0 => catch22::dn_outlier_include_np_001_mdrmd(x, false),
         1 => catch22::dn_outlier_include_np_001_mdrmd(x, true),
@@ -28,13 +25,14 @@ pub fn compute(x: &[f64], n: usize) -> f64 {
         14 => catch22::sb_binary_stats_mean_longstretch1(x),
         15 => catch22::sb_motif_three_quantile_hh(x),
         16 => catch22::sc_fluct_anal_2_50_1_logi_prop_r1(x, 1, "rsrangefit"),
-        17 => catch22::sp_summaries_welch_rect(x, "area_5_1"),
-        18 => catch22::sp_summaries_welch_rect(x, "centroid"),
-        19 => catch22::sb_transition_matrix_3ac_sumdiagcov(x),
-        20 => catch22::pd_periodicity_wang_th0_01(x),
-        21 => statistics::mean(x),
-        22 => statistics::std_dev(x),
-        23 => statistics::slope(x),
+        17 => catch22::sc_fluct_anal_2_50_1_logi_prop_r1(x, 2, "dfa"),
+        18 => catch22::sp_summaries_welch_rect(x, "area_5_1"),
+        19 => catch22::sp_summaries_welch_rect(x, "centroid"),
+        20 => catch22::sb_transition_matrix_3ac_sumdiagcov(x),
+        21 => catch22::pd_periodicity_wang_th0_01(x),
+        22 => statistics::mean(x),
+        23 => statistics::std_dev(x),
+        24 => statistics::slope(x),
         _ => panic!("Invalid feature index"),
     }
 }

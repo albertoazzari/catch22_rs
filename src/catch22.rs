@@ -6,6 +6,10 @@ use crate::statistics::{
 };
 
 pub fn dn_outlier_include_np_001_mdrmd(a: &[f64], is_pos: bool) -> f64 {
+    // constant check
+    if is_constant(a) {
+        return 0.0;
+    }
     // sign is false if we want to represent -1
 
     let mut a = a.to_vec();
@@ -631,6 +635,10 @@ pub fn sp_summaries_welch_rect(a: &[f64], what: &str) -> f64 {
 }
 
 pub fn sb_transition_matrix_3ac_sumdiagcov(a: &[f64]) -> f64 {
+    if is_constant(a) {
+        return f64::NAN;
+    }
+
     let num_groups = 3;
 
     let tau = first_zero(a, a.len());
