@@ -1,8 +1,6 @@
 #![warn(dead_code)]
 use crate::statistics::{
-    autocorr, autocorr_lag, coarsegrain, covariance_matrix, diff, f_entropy, first_zero,
-    histbinassign, histcount_edges, histcounts, is_constant, linreg, mean, median, norm,
-    num_bins_auto, splinefit, std_dev, welch,
+    autocorr, autocorr_lag, coarsegrain, covariance_matrix, diff, f_entropy, first_zero, histbinassign, histcount_edges, histcounts, is_constant, linreg, max_, mean, median, min_, norm, num_bins_auto, splinefit, std_dev, welch
 };
 
 pub fn dn_outlier_include_np_001_mdrmd(a: &[f64], is_pos: bool) -> f64 {
@@ -180,14 +178,8 @@ pub fn co_histogram_ami_even_tau_bins(a: &[f64], tau: usize, n_bins: usize) -> f
         y2[i] = a[i + tau];
     }
 
-    let max_val = a
-        .iter()
-        .max_by(|x, y| x.partial_cmp(y).unwrap())
-        .unwrap_or(a.first().unwrap());
-    let min_val = a
-        .iter()
-        .min_by(|x, y| x.partial_cmp(y).unwrap())
-        .unwrap_or(a.first().unwrap());
+    let max_val = max_(a);
+    let min_val = min_(a);
 
     let bin_step = (max_val - min_val + 0.2) / n_bins as f64;
 
@@ -508,14 +500,8 @@ pub fn sc_fluct_anal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f6
 
             match how {
                 "rsrangefit" => {
-                    let max = buffer
-                        .iter()
-                        .max_by(|x, y| x.partial_cmp(y).unwrap())
-                        .unwrap_or(buffer.first().unwrap());
-                    let min = buffer
-                        .iter()
-                        .min_by(|x, y| x.partial_cmp(y).unwrap())
-                        .unwrap_or(buffer.first().unwrap());
+                    let max = max_(&buffer);
+                    let min = min_(&buffer);
                     F[i] += (max - min).powi(2);
                 }
                 "dfa" => {
@@ -569,10 +555,7 @@ pub fn sc_fluct_anal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f6
     }
 
     let mut first_min_ind = 0;
-    let minimum = *sserr
-        .iter()
-        .min_by(|x, y| x.partial_cmp(y).unwrap())
-        .unwrap_or(sserr.first().unwrap());
+    let minimum = min_(&sserr);
     for i in 0..nsserr {
         if sserr[i] == minimum {
             first_min_ind = i + min_points - 1;
