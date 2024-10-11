@@ -180,8 +180,14 @@ pub fn co_histogram_ami_even_tau_bins(a: &[f64], tau: usize, n_bins: usize) -> f
         y2[i] = a[i + tau];
     }
 
-    let max_val = a.iter().max_by(|x, y| x.partial_cmp(y).unwrap()).unwrap();
-    let min_val = a.iter().min_by(|x, y| x.partial_cmp(y).unwrap()).unwrap();
+    let max_val = a
+        .iter()
+        .max_by(|x, y| x.partial_cmp(y).unwrap())
+        .unwrap_or(a.first().unwrap());
+    let min_val = a
+        .iter()
+        .min_by(|x, y| x.partial_cmp(y).unwrap())
+        .unwrap_or(a.first().unwrap());
 
     let bin_step = (max_val - min_val + 0.2) / n_bins as f64;
 
@@ -505,11 +511,11 @@ pub fn sc_fluct_anal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f6
                     let max = buffer
                         .iter()
                         .max_by(|x, y| x.partial_cmp(y).unwrap())
-                        .unwrap();
+                        .unwrap_or(buffer.first().unwrap());
                     let min = buffer
                         .iter()
                         .min_by(|x, y| x.partial_cmp(y).unwrap())
-                        .unwrap();
+                        .unwrap_or(buffer.first().unwrap());
                     F[i] += (max - min).powi(2);
                 }
                 "dfa" => {
@@ -566,7 +572,7 @@ pub fn sc_fluct_anal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f6
     let minimum = *sserr
         .iter()
         .min_by(|x, y| x.partial_cmp(y).unwrap())
-        .unwrap();
+        .unwrap_or(sserr.first().unwrap());
     for i in 0..nsserr {
         if sserr[i] == minimum {
             first_min_ind = i + min_points - 1;

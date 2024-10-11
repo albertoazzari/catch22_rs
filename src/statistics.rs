@@ -67,8 +67,14 @@ pub fn slope(a: &[f64]) -> f64 {
 pub fn histcounts(a: &[f64], n_bins: usize) -> (Vec<usize>, Vec<f64>) {
     let mut n_bins = n_bins;
 
-    let max_val = a.iter().max_by(|x, y| x.partial_cmp(y).unwrap()).unwrap();
-    let min_val = a.iter().min_by(|x, y| x.partial_cmp(y).unwrap()).unwrap();
+    let max_val = a
+        .iter()
+        .max_by(|x, y| x.partial_cmp(y).unwrap())
+        .unwrap_or(a.first().unwrap());
+    let min_val = a
+        .iter()
+        .min_by(|x, y| x.partial_cmp(y).unwrap())
+        .unwrap_or(a.first().unwrap());
 
     if n_bins <= 0 {
         n_bins = ((max_val - min_val) / (3.5 * std_dev(a) * (a.len() as f64).powf(-1.0 / 3.0)))
@@ -129,8 +135,14 @@ pub fn first_zero(a: &[f64], max_tau: usize) -> usize {
 }
 
 pub fn num_bins_auto(a: &[f64]) -> usize {
-    let max_val = a.iter().max_by(|x, y| x.partial_cmp(y).unwrap()).unwrap();
-    let min_val = a.iter().min_by(|x, y| x.partial_cmp(y).unwrap()).unwrap();
+    let max_val = a
+        .iter()
+        .max_by(|x, y| x.partial_cmp(y).unwrap())
+        .unwrap_or(a.first().unwrap());
+    let min_val = a
+        .iter()
+        .min_by(|x, y| x.partial_cmp(y).unwrap())
+        .unwrap_or(a.first().unwrap());
 
     if std_dev(a) < 0.001 {
         return 0;
