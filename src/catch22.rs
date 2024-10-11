@@ -11,10 +11,6 @@ pub fn dn_outlier_include_np_001_mdrmd(a: &[f64], is_pos: bool) -> f64 {
     let mut a = a.to_vec();
     let inc = 0.01;
 
-    if is_constant(&a) {
-        return 0.0;
-    }
-
     if !is_pos {
         a.iter_mut().for_each(|x| *x = -*x);
     }
