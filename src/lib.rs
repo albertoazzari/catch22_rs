@@ -1,5 +1,3 @@
-use statistics::is_constant;
-
 mod catch22;
 mod statistics;
 mod utils;
