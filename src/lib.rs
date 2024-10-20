@@ -1,6 +1,5 @@
 mod catch22;
 mod statistics;
-mod utils;
 
 pub const N_CATCH22: usize = 25;
 
@@ -34,91 +33,3 @@ pub fn compute(x: &[f64], n: usize) -> f64 {
         _ => panic!("Invalid feature index"),
     }
 }
-
-#[macro_export]
-macro_rules! assert_eq_with_tol {
-    ($left:expr, $right:expr, $tol:expr $(,)?) => {{
-        let (left_val, right_val, tol_val) = ($left, $right, $tol);
-        if (left_val - right_val).abs() > tol_val {
-            panic!(
-                "assertion failed: `(left ≈ right)`\n  left: `{:?}`,\n right: `{:?}`,\n  tolerance: `{:?}`",
-                left_val, right_val, tol_val
-            );
-        }
-    }};
-}
-
-// mod native_catch22 {
-//     #![allow(warnings)]
-//     include!(concat!(env!("OUT_DIR"), "/catch22.rs"));
-// }
-
-// #[test]
-// pub fn test_catch22() {
-
-//     use std::fs;
-//     use crate::utils::read_csv;
-
-//     let paths = fs::read_dir("/media/DATA/albertoazzari/UCRArchive_2018").unwrap();
-
-//     let mut datasets = Vec::new();
-//     for entry in paths {
-//         // Unwrap the entry or handle the error, if any.
-//         let entry = entry.unwrap();
-//         if entry.file_type().unwrap().is_dir() {
-//             datasets.push(entry);
-//         }
-//     }
-//     datasets.sort_by_key(|dir| dir.file_name().to_string_lossy().to_string());
-//     for path in &datasets {
-//         println!("\tProcessing {}", path.file_name().to_string_lossy());
-//         let train_path = path
-//             .path()
-//             .join(format!("{}_TRAIN.tsv", path.file_name().to_string_lossy()));
-//         let test_path = path
-//             .path()
-//             .join(format!("{}_TEST.tsv", path.file_name().to_string_lossy()));
-
-//         let ds_train = read_csv(train_path, b'\t', false).unwrap();
-//         let ds_test = read_csv(test_path, b'\t', false).unwrap();
-
-//         let mut ds = ds_train.clone();
-//         ds.extend(ds_test.clone());
-
-//         let res_native = ds
-//             .iter()
-//             .map(|x| {
-//                 (0..24)
-//                     .collect::<Vec<usize>>()
-//                     .iter()
-//                     .map(|n| compute_catch_single_native(x, *n))
-//                     .collect::<Vec<f64>>()
-//             })
-//             .collect::<Vec<Vec<f64>>>();
-
-//         let res_rs = ds
-//             .iter()
-//             .map(|x| {
-//                 (0..24)
-//                     .collect::<Vec<usize>>()
-//                     .iter()
-//                     .map(|n| compute_catch_single(x, *n))
-//                     .collect::<Vec<f64>>()
-//             })
-//             .collect::<Vec<Vec<f64>>>();
-
-//         for i in 0..res_rs.len() {
-//             for j in 0..res_rs[i].len() {
-//                 if (res_rs[i][j] - res_native[i][j]).abs() > 1e-8 {
-//                     compute_catch_single(&ds[i], j);
-//                     compute_catch_single_native(&ds[i], j);
-//                     panic!(
-//                         "i = {}, j = {}, rs = {}, native = {}",
-//                         i, j, res_rs[i][j], res_native[i][j]
-//                     );
-//                 }
-//                 //assert_eq_with_tol!(res_rs[i][j], res_native[i][j], 1e-8);
-//             }
-//         }
-//     }
-// }
