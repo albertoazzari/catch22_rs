@@ -271,10 +271,10 @@ pub fn fc_local_simple_mean_tauresrat(a: &[f64], train_length: usize) -> f64 {
         res[i] = a[i + train_length] - yest;
     }
 
-    let resAC1stZ = first_zero(&res, res.len()) as f64;
-    let yAC1stZ = first_zero(a, a.len()) as f64;
+    let res_ac1st_z = first_zero(&res, res.len()) as f64;
+    let y_ac1st_z = first_zero(a, a.len()) as f64;
 
-    let out = resAC1stZ / yAC1stZ;
+    let out = res_ac1st_z / y_ac1st_z;
     return out;
 }
 
@@ -481,13 +481,12 @@ pub fn sc_fluct_anal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f6
         x_reg[i] = (i+1) as f64;
     }
 
-    let mut F = vec![0.0; n_tau];
+    let mut f = vec![0.0; n_tau];
     for i in 0..n_tau {
         let n_buffer = (size_cs as f64 / tau[i]) as usize;
-        // println!("n_buffer: {}", n_buffer);
         let mut buffer = vec![0.0; tau[i] as usize];
 
-        F[i] = 0.0;
+        f[i] = 0.0;
 
         for j in 0..n_buffer {
             let (m, b) = linreg(tau[i] as usize, &x_reg, &y_cs[j*tau[i] as usize..]);
@@ -500,11 +499,11 @@ pub fn sc_fluct_anal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f6
                 "rsrangefit" => {
                     let max = buffer.iter().max_by(|x, y| x.partial_cmp(y).unwrap()).unwrap();
                     let min = buffer.iter().min_by(|x, y| x.partial_cmp(y).unwrap()).unwrap();
-                    F[i] += (max - min).powi(2);
+                    f[i] += (max - min).powi(2);
                 },
                 "dfa" => {
                     for k in 0..tau[i] as usize {
-                        F[i] += buffer[k].powi(2);
+                        f[i] += buffer[k].powi(2);
                     }
                 },
                 _ => return 0.0,
@@ -512,8 +511,8 @@ pub fn sc_fluct_anal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f6
         }
 
         match how {
-            "rsrangefit" => F[i] = (F[i] / n_buffer as f64).sqrt(),
-            "dfa" => F[i] = (F[i] / n_buffer as f64 * tau[i]).sqrt(),
+            "rsrangefit" => f[i] = (f[i] / n_buffer as f64).sqrt(),
+            "dfa" => f[i] = (f[i] / n_buffer as f64 * tau[i]).sqrt(),
             _ => unreachable!(),
         }
     }
@@ -525,7 +524,7 @@ pub fn sc_fluct_anal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f6
 
     for i in 0..n_tau {
         logtt[i] = tau[i].ln();
-        logff[i] = F[i].ln();
+        logff[i] = f[i].ln();
     }
 
     let min_points = 6;
@@ -568,18 +567,18 @@ pub fn sc_fluct_anal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f6
 
 pub fn sp_summaries_welch_rect(a: &[f64], what: &str) -> f64{
     let window = (0..a.len()).map(|_| 1.0).collect::<Vec<f64>>();
-    let Fs = 1.0;
+    let fs = 1.0;
 
-    let (S, F) = welch(a, Fs, &window);
+    let (s, f) = welch(a, fs, &window);
 
-    let mut w = vec![0.0; S.len()];
-    let mut Sw = vec![0.0; S.len()];
+    let mut w = vec![0.0; s.len()];
+    let mut sw = vec![0.0; s.len()];
 
-    for i in 0..S.len() {
-        w[i] = 2.0 * std::f64::consts::PI * F[i];
-        Sw[i] = S[i]/(2.0*std::f64::consts::PI);
+    for i in 0..s.len() {
+        w[i] = 2.0 * std::f64::consts::PI * f[i];
+        sw[i] = s[i]/(2.0*std::f64::consts::PI);
 
-        if Sw[i].is_infinite() {
+        if sw[i].is_infinite() {
             return 0.0;
         }
     }
@@ -587,38 +586,34 @@ pub fn sp_summaries_welch_rect(a: &[f64], what: &str) -> f64{
     let dw = w[1] - w[0];
 
     // cum sum of Sw
-    let S_cs = Sw.iter().scan(0.0, |state, x| {
+    let s_cs = sw.iter().scan(0.0, |state, x| {
         *state += x;
         Some(*state)
     }).collect::<Vec<f64>>();
 
-    let mut out = 0.0;
-
     match what {
         "centroid" => {
-            let S_cs_thresh = S_cs[S.len()-1] / 2.0;
+            let s_cs_thresh = s_cs[s.len()-1] / 2.0;
             let mut centroid = 0.0;
-            for i in 0..S.len() {
-                if S_cs[i] > S_cs_thresh {
+            for i in 0..s.len() {
+                if s_cs[i] > s_cs_thresh {
                     centroid = w[i];
                     break;
                 }
             }
-            out = centroid;
+            centroid
         },
         "area_5_1" => {
             let mut area_5_1 = 0.0;
-            for i in 0..S.len()/5 {
+            for i in 0..s.len()/5 {
                 if w[i] >= 5.0 && w[i] <= 1.0 {
-                    area_5_1 += Sw[i];
+                    area_5_1 += sw[i];
                 }
             }
-            out = area_5_1*dw;
+            area_5_1*dw
         },
         _ => unimplemented!("Not implemented yet"),
     }
-
-    return out;
 }
 
 pub fn sb_transition_matrix_3ac_sumdiagcov(a: &[f64]) -> f64 {
@@ -690,12 +685,10 @@ pub fn pd_periodicity_wang_th0_01(a: &[f64]) -> f64 {
     let mut peaks = vec![0.0; ac_max];
     let mut n_troughs = 0;
     let mut n_peaks = 0;
-    let mut slope_in = 0.0;
-    let mut slope_out = 0.0;
 
     for i in 1..ac_max-1 {
-        slope_in = acf[i] - acf[i-1];
-        slope_out = acf[i+1] - acf[i];
+        let slope_in = acf[i] - acf[i-1];
+        let slope_out = acf[i+1] - acf[i];
         
         if slope_in < 0.0 && slope_out > 0.0 {
             troughs[n_troughs] = i as f64;
@@ -706,16 +699,11 @@ pub fn pd_periodicity_wang_th0_01(a: &[f64]) -> f64 {
         }
     }
 
-    let mut i_peak = 0.0;
-    let mut the_peak = 0.0;
-    let mut i_trough = 0.0;
-    let mut the_trough = 0.0;
-
     let mut out = 0.0;
 
     for i in 0..n_peaks {
-        i_peak = peaks[i];
-        the_peak = acf[i_peak as usize];
+        let i_peak = peaks[i];
+        let the_peak = acf[i_peak as usize];
 
         let mut j: i32 = -1;
         while troughs[(j as usize)+1] < i_peak as f64 && (j as usize)+1 < n_troughs {
@@ -726,8 +714,8 @@ pub fn pd_periodicity_wang_th0_01(a: &[f64]) -> f64 {
             continue;
         }
 
-        i_trough = troughs[j as usize];
-        the_trough = acf[i_trough as usize];
+        let i_trough = troughs[j as usize];
+        let the_trough = acf[i_trough as usize];
 
         if the_peak - the_trough < th {
             continue;
