@@ -1,8 +1,6 @@
 #![warn(dead_code)]
 use crate::statistics::{
-    autocorr, autocorr_lag, coarsegrain, covariance_matrix, diff, f_entropy, first_zero,
-    histbinassign, histcount_edges, histcounts, is_constant, linreg, max_, mean, median, min_,
-    norm, num_bins_auto, splinefit, std_dev, welch,
+    autocorr, autocorr_lag, autocov_lag, coarsegrain, covariance_matrix, diff, f_entropy, first_zero, histbinassign, histcount_edges, histcounts, is_constant, linreg, max_, mean, median, min_, norm, num_bins_auto, splinefit, std_dev, welch
 };
 
 pub fn dn_outlier_include_np_001_mdrmd(a: &[f64], is_pos: bool) -> f64 {
@@ -662,12 +660,8 @@ pub fn sb_transition_matrix_3ac_sumdiagcov(a: &[f64]) -> f64 {
 }
 
 pub fn pd_periodicity_wang_th0_01(a: &[f64]) -> f64 {
-    // let start_time_t = std::time::Instant::now();
     let th = 0.01;
-
-    // let start_time = std::time::Instant::now();
     let y_spline = splinefit(a);
-    // println!("splinefit: {:?}", start_time.elapsed().as_secs_f64());
 
     let mut y_sub = vec![0.0; a.len()];
     for i in 0..a.len() {
@@ -675,22 +669,10 @@ pub fn pd_periodicity_wang_th0_01(a: &[f64]) -> f64 {
     }
 
     let ac_max = (a.len() as f64 / 3.0).ceil() as usize;
-
     let mut acf = vec![0.0; ac_max];
 
-    // let start_time = std::time::Instant::now();
-    // let prefix_mean_y_sub = y_sub
-    //     .iter()
-    //     .enumerate()
-    //     .rev()
-    //     .scan(0.0, |state, (i, x)| {
-    //         *state += x;
-    //         Some(*state / (i + 1) as f64)
-    //     })
-    //     .collect::<Vec<f64>>();
-
     for i in 1..(ac_max + 1) {
-        acf[i - 1] = autocorr_lag(&y_sub, i);
+        acf[i - 1] = autocov_lag(&y_sub, i);
     }
 
     let mut troughs = vec![0.0; ac_max];
@@ -740,7 +722,6 @@ pub fn pd_periodicity_wang_th0_01(a: &[f64]) -> f64 {
         out = i_peak as f64;
         break;
     }
-    // println!("periodicity_wang_th0_01: {:?}", start_time_t.elapsed().as_secs_f64());
 
     return out;
 }

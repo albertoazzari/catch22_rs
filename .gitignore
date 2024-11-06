@@ -3,4 +3,5 @@ target/
 .vscode/
 catch22/
 test.sh
+build.rs
 
