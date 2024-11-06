@@ -1,6 +1,8 @@
 #![warn(dead_code)]
 use crate::statistics::{
-    autocorr, autocorr_lag, coarsegrain, covariance_matrix, diff, f_entropy, first_zero, histbinassign, histcount_edges, histcounts, is_constant, linreg, max_, mean, median, min_, norm, num_bins_auto, splinefit, std_dev, welch
+    autocorr, autocorr_lag, coarsegrain, covariance_matrix, diff, f_entropy, first_zero,
+    histbinassign, histcount_edges, histcounts, is_constant, linreg, max_, mean, median, min_,
+    norm, num_bins_auto, splinefit, std_dev, welch,
 };
 
 pub fn dn_outlier_include_np_001_mdrmd(a: &[f64], is_pos: bool) -> f64 {
@@ -501,7 +503,7 @@ pub fn sc_fluct_anal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f6
                 "rsrangefit" => {
                     let max = max_(&buffer);
                     let min = min_(&buffer);
-                    F[i] += (max - min).powi(2);
+                    f[i] += (max - min).powi(2);
                 }
                 "dfa" => {
                     for k in 0..tau[i] as usize {
@@ -573,9 +575,9 @@ pub fn sp_summaries_welch_rect(a: &[f64], what: &str) -> f64 {
     let mut w = vec![0.0; s.len()];
     let mut sw = vec![0.0; s.len()];
 
-    for i in 0..S.len() {
-        w[i] = 2.0 * std::f64::consts::PI * F[i];
-        Sw[i] = S[i] / (2.0 * std::f64::consts::PI);
+    for i in 0..s.len() {
+        w[i] = 2.0 * std::f64::consts::PI * f[i];
+        sw[i] = s[i] / (2.0 * std::f64::consts::PI);
 
         if sw[i].is_infinite() {
             return 0.0;
@@ -584,8 +586,8 @@ pub fn sp_summaries_welch_rect(a: &[f64], what: &str) -> f64 {
 
     let dw = w[1] - w[0];
 
-    // cum sum of Sw
-    let S_cs = Sw
+    // cum sum of sw
+    let s_cs = sw
         .iter()
         .scan(0.0, |state, x| {
             *state += x;
@@ -593,11 +595,9 @@ pub fn sp_summaries_welch_rect(a: &[f64], what: &str) -> f64 {
         })
         .collect::<Vec<f64>>();
 
-    let mut out = 0.0;
-
     match what {
         "centroid" => {
-            let S_cs_thresh = S_cs[S.len() - 1] / 2.0;
+            let s_cs_thresh = s_cs[s.len() - 1] / 2.0;
             let mut centroid = 0.0;
             for i in 0..s.len() {
                 if s_cs[i] > s_cs_thresh {
@@ -605,16 +605,16 @@ pub fn sp_summaries_welch_rect(a: &[f64], what: &str) -> f64 {
                     break;
                 }
             }
-            out = centroid;
+            centroid
         }
         "area_5_1" => {
             let mut area_5_1 = 0.0;
-            for i in 0..S.len() / 5 {
+            for i in 0..s.len() / 5 {
                 if w[i] >= 5.0 && w[i] <= 1.0 {
                     area_5_1 += sw[i];
                 }
             }
-            out = area_5_1 * dw;
+            area_5_1 * dw
         }
         _ => unimplemented!("Not implemented yet"),
     }
@@ -699,8 +699,8 @@ pub fn pd_periodicity_wang_th0_01(a: &[f64]) -> f64 {
     let mut n_peaks = 0;
 
     for i in 1..ac_max - 1 {
-        slope_in = acf[i] - acf[i - 1];
-        slope_out = acf[i + 1] - acf[i];
+        let slope_in = acf[i] - acf[i - 1];
+        let slope_out = acf[i + 1] - acf[i];
 
         if slope_in < 0.0 && slope_out > 0.0 {
             troughs[n_troughs] = i as f64;

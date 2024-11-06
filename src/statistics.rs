@@ -3,7 +3,6 @@ use std::vec;
 use rustfft::{
     algorithm::Radix4,
     num_complex::{Complex, ComplexFloat},
-    num_traits::real::Real,
     Fft,
 };
 
@@ -25,14 +24,6 @@ pub fn max_(a: &[f64]) -> f64 {
         }
     }
     return max;
-}
-
-pub fn zscore(a: &[f64]) -> Vec<f64> {
-    let mean = a.iter().sum::<f64>() / a.len() as f64;
-    let variance = a.iter().map(|&x| (x - mean).powi(2)).sum::<f64>() / (a.len() - 1) as f64;
-    let std_dev = variance.sqrt();
-
-    a.iter().map(|&x| (x - mean) / std_dev).collect()
 }
 
 pub fn is_constant(a: &[f64]) -> bool {
@@ -469,9 +460,8 @@ pub fn splinefit(a: &[f64]) -> Vec<f64> {
     }
 
     let mut h = vec![0.0; (deg + 1) * pieces_ext];
-    let mut ii_flat = 0;
     for i in 0..n_spline * pieces_ext {
-        ii_flat = ii[i % n_spline][i / n_spline] as usize;
+        let ii_flat = ii[i % n_spline][i / n_spline] as usize;
         h[i] = h_ext[ii_flat];
     }
 
@@ -557,86 +547,81 @@ pub fn splinefit(a: &[f64]) -> Vec<f64> {
     }
 
     let mut coefs_out = vec![vec![0.0; n_spline]; n_spline * pieces];
-    let mut jj_flat = 0;
 
     for i in 0..n_spline * pieces {
-        jj_flat = jj[i % n_spline][i / n_spline] - 1;
+        let jj_flat = jj[i % n_spline][i / n_spline] - 1;
         for j in 0..n_spline {
             coefs_out[i][j] = coefs[jj_flat][j];
         }
     }
 
-    let mut xsB = vec![0; a.len() * n_spline];
-    let mut indexB = vec![0; a.len() * n_spline];
+    let mut xs_b = vec![0; a.len() * n_spline];
+    let mut index_b = vec![0; a.len() * n_spline];
 
     let mut break_ind = 1;
 
     for i in 0..a.len() {
-        if i >= breaks[breakInd] && breakInd < breaks.len() - 1 {
-            breakInd += 1;
+        if i >= breaks[break_ind] && break_ind < breaks.len() - 1 {
+            break_ind += 1;
         }
         for j in 0..n_spline {
-            xsB[i * n_spline + j] = i - breaks[breakInd - 1];
-            indexB[i * n_spline + j] = j + (breakInd - 1) * n_spline;
+            xs_b[i * n_spline + j] = i - breaks[break_ind - 1];
+            index_b[i * n_spline + j] = j + (break_ind - 1) * n_spline;
         }
     }
 
-    let mut vB = vec![0.0; a.len() * n_spline];
+    let mut v_b = vec![0.0; a.len() * n_spline];
     for i in 0..a.len() * n_spline {
-        vB[i] = coefs_out[indexB[i]][0];
+        v_b[i] = coefs_out[index_b[i]][0];
     }
 
     for i in 1..n_spline {
         for j in 0..a.len() * n_spline {
-            vB[j] = vB[j] * xsB[j] as f64 + coefs_out[indexB[j]][i];
+            v_b[j] = v_b[j] * xs_b[j] as f64 + coefs_out[index_b[j]][i];
         }
     }
 
-    let mut A = vec![0.0; a.len() * (n_spline + 1)];
-    let mut breakInd = 0;
+    let mut a_ = vec![0.0; a.len() * (n_spline + 1)];
+    let mut break_ind = 0;
     for i in 0..a.len() * n_spline {
         if i / n_spline >= breaks[1] {
-            breakInd = 1;
+            break_ind = 1;
         }
-        A[(i % n_spline) + breakInd + (i / n_spline) * (n_spline + 1)] = vB[i];
+        a_[(i % n_spline) + break_ind + (i / n_spline) * (n_spline + 1)] = v_b[i];
     }
 
-    let x = lsqsolve_sub(a.len(), n_spline + 1, &A, a);
+    let x = lsqsolve_sub(a.len(), n_spline + 1, &a_, a);
 
-    let mut C = vec![vec![0.0; n_spline * pieces]; pieces + n_spline - 1];
-    let mut CRow = 0;
-    let mut CCol = 0;
-    let mut coefRow = 0;
-    let mut coefCol = 0;
+    let mut c = vec![vec![0.0; n_spline * pieces]; pieces + n_spline - 1];
     for i in 0..n_spline * n_spline * pieces {
-        CRow = i % n_spline + (i / n_spline) % 2;
-        CCol = i / n_spline;
-        coefRow = i % (n_spline * 2);
-        coefCol = i / (n_spline * 2);
-        C[CRow][CCol] = coefs_out[coefRow][coefCol];
+        let crow = i % n_spline + (i / n_spline) % 2;
+        let ccol = i / n_spline;
+        let coef_row = i % (n_spline * 2);
+        let coef_col = i / (n_spline * 2);
+        c[crow][ccol] = coefs_out[coef_row][coef_col];
     }
 
     let mut coefs_spline = vec![vec![0.0; n_spline]; pieces];
 
     for i in 0..n_spline * pieces {
-        let coefCol = i / pieces;
-        let coefRow = i % pieces;
+        let coef_col = i / pieces;
+        let coef_row = i % pieces;
         for j in 0..n_spline + 1 {
-            coefsSpline[coefRow][coefCol] += C[j][i] * x[j];
+            coefs_spline[coef_row][coef_col] += c[j][i] * x[j];
         }
     }
 
     let mut y_out = vec![0.0; a.len()];
     for i in 0..a.len() {
-        second_half = if i < breaks[1] as usize { 0 } else { 1 };
-        y_out[i] = coefsSpline[second_half][0];
+        let second_half = if i < breaks[1] as usize { 0 } else { 1 };
+        y_out[i] = coefs_spline[second_half][0];
     }
 
     for i in 1..n_spline {
         for j in 0..a.len() {
-            second_half = if j < breaks[1] as usize { 0 } else { 1 };
+            let second_half = if j < breaks[1] as usize { 0 } else { 1 };
             y_out[j] =
-                y_out[j] * (j - breaks[1] * second_half) as f64 + coefsSpline[second_half][i];
+                y_out[j] * (j - breaks[1] * second_half) as f64 + coefs_spline[second_half][i];
         }
     }
 
@@ -644,8 +629,8 @@ pub fn splinefit(a: &[f64]) -> Vec<f64> {
 }
 
 // const int sizeA1, const int sizeA2, const double *A, const int sizeb, const double *b,
-pub fn lsqsolve_sub(size_a1: usize, size_a2: usize, A: &[f64], b: &[f64]) -> Vec<f64> {
-    let mut AT = vec![0.0; size_a2 * size_a1];
+pub fn lsqsolve_sub(size_a1: usize, size_a2: usize, a: &[f64], b: &[f64]) -> Vec<f64> {
+    let mut at = vec![0.0; size_a2 * size_a1];
 
     for i in 0..size_a1 {
         for j in 0..size_a2 {
@@ -654,10 +639,10 @@ pub fn lsqsolve_sub(size_a1: usize, size_a2: usize, A: &[f64], b: &[f64]) -> Vec
     }
 
     // ATA = AT * A
-    let ATA = matrix_multiply(size_a2, size_a1, &AT, size_a1, size_a2, A);
+    let ata = matrix_multiply(size_a2, size_a1, &at, size_a1, size_a2, a);
 
     // ATb = AT * b
-    let ATb = matrix_times_vector(size_a2, size_a1, &AT, size_a1, b);
+    let atb = matrix_times_vector(size_a2, size_a1, &at, size_a1, b);
 
     // Gauss-Jordan elimination
 
@@ -680,7 +665,7 @@ pub fn gauss_elimination(size_a2: usize, a: Vec<f64>, b: Vec<f64>) -> Vec<f64> {
 
     for i in 0..size_a2 {
         for j in i + 1..size_a2 {
-            factor = a_elim[j][i] / a_elim[i][i];
+            let factor = a_elim[j][i] / a_elim[i][i];
             b_elim[j] = b_elim[j] - factor * b_elim[i];
 
             for k in i..size_a2 {
@@ -702,20 +687,20 @@ pub fn gauss_elimination(size_a2: usize, a: Vec<f64>, b: Vec<f64>) -> Vec<f64> {
 }
 
 pub fn matrix_multiply(
-    sizeA1: usize,
-    sizeA2: usize,
-    A: &[f64],
-    sizeB1: usize,
-    sizeB2: usize,
-    B: &[f64],
+    size_a1: usize,
+    size_a2: usize,
+    a: &[f64],
+    size_b1: usize,
+    size_b2: usize,
+    b: &[f64],
 ) -> Vec<f64> {
-    let mut C = vec![0.0; sizeA1 * sizeA1];
+    let mut c = vec![0.0; size_a1 * size_a1];
 
-    for i in 0..sizeA1 {
-        for j in 0..sizeB2 {
-            C[i * sizeB2 + j] = 0.0;
-            for k in 0..sizeB1 {
-                C[i * sizeB2 + j] += A[i * sizeA2 + k] * B[k * sizeB2 + j];
+    for i in 0..size_a1 {
+        for j in 0..size_b2 {
+            c[i * size_b2 + j] = 0.0;
+            for k in 0..size_b1 {
+                c[i * size_b2 + j] += a[i * size_a2 + k] * b[k * size_b2 + j];
             }
         }
     }
@@ -723,18 +708,18 @@ pub fn matrix_multiply(
 }
 
 pub fn matrix_times_vector(
-    sizeA1: usize,
-    sizeA2: usize,
-    A: &[f64],
+    size_a1: usize,
+    size_a2: usize,
+    a: &[f64],
     sizeb: usize,
     b: &[f64],
 ) -> Vec<f64> {
     //c[sizeb]
-    let mut c = vec![0.0; sizeA1];
-    for i in 0..sizeA1 {
+    let mut c = vec![0.0; size_a1];
+    for i in 0..size_a1 {
         c[i] = 0.0;
         for k in 0..sizeb {
-            c[i] += A[i * sizeA2 + k] * b[k];
+            c[i] += a[i * size_a2 + k] * b[k];
         }
     }
     return c;
