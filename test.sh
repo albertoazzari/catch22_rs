@@ -1,1 +1,0 @@
-cargo test --release -- --skip catch22 --nocapture
