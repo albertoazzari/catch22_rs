@@ -181,7 +181,6 @@ pub fn histcount_edges(a: &[f64], bin_edges: &[f64]) -> Vec<usize> {
     return histcounts;
 }
 pub fn autocov_lag(a: &[f64], lag: usize) -> f64 {
-
     cov_(&a[..a.len() - lag], &a[lag..])
 }
 fn cov_(a: &[f64], b: &[f64]) -> f64 {
@@ -193,10 +192,7 @@ fn cov_(a: &[f64], b: &[f64]) -> f64 {
     return covariance / a.len() as f64;
 }
 
-pub fn autocorr_lag(
-    a: &[f64],
-    lag: usize,
-) -> f64 {
+pub fn autocorr_lag(a: &[f64], lag: usize) -> f64 {
     let mean_a = mean(&a[..a.len() - lag]);
     let mean_b = mean(&a[lag..]);
 

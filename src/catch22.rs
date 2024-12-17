@@ -1,6 +1,8 @@
 #![warn(dead_code)]
 use crate::statistics::{
-    autocorr, autocorr_lag, autocov_lag, coarsegrain, covariance_matrix, diff, f_entropy, first_zero, histbinassign, histcount_edges, histcounts, is_constant, linreg, max_, mean, median, min_, norm, num_bins_auto, splinefit, std_dev, welch
+    autocorr, autocorr_lag, autocov_lag, coarsegrain, covariance_matrix, diff, f_entropy,
+    first_zero, histbinassign, histcount_edges, histcounts, is_constant, linreg, max_, mean,
+    median, min_, norm, num_bins_auto, splinefit, std_dev, welch,
 };
 
 pub fn dn_outlier_include_np_001_mdrmd(a: &[f64], is_pos: bool) -> f64 {
@@ -700,7 +702,7 @@ pub fn pd_periodicity_wang_th0_01(a: &[f64]) -> f64 {
         let the_peak = acf[i_peak as usize];
 
         let mut j: i32 = -1;
-        while troughs[(j as usize) + 1] < i_peak as f64 && (j as usize) + 1 < n_troughs {
+        while troughs[(j + 1) as usize] < i_peak as f64 && ((j + 1) as usize) < n_troughs {
             j += 1;
         }
 
